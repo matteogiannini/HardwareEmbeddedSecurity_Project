@@ -42,7 +42,6 @@ module tb_light_hash;
         
         // Send 8 bytes sequentially
         msg_start = 1; 
-        #10
         byte_valid = 1;
         msg_byte = 8'hA1; #10;
         msg_byte = 8'hB2; #10;
@@ -63,6 +62,8 @@ module tb_light_hash;
         wait(eoc == 1);
         $display("Output ctxt = {%h, %h, %h, %h, %h, %h, %h, %h}", 
                  ctxt[0], ctxt[1], ctxt[2], ctxt[3], ctxt[4], ctxt[5], ctxt[6], ctxt[7]);
+
+        #10 // Sample time
 
         // Test Case 2: Send a 6-byte message and stop
         $display("Test Case 2: Sending 6-byte message");
@@ -88,16 +89,51 @@ module tb_light_hash;
         $display("Output ctxt = {%h, %h, %h, %h, %h, %h, %h, %h}", 
                  ctxt[0], ctxt[1], ctxt[2], ctxt[3], ctxt[4], ctxt[5], ctxt[6], ctxt[7]);
 
+        #10 // Sample time
+
         // Test Case 3: Send a 3-byte message
         $display("Test Case 3: Sending 3-byte message");
         
         // Send 3 bytes sequentially
         msg_start = 1; 
-        #10
         byte_valid = 1;
         msg_byte = 8'h12; #10;
         msg_byte = 8'h34; #10;
         msg_byte = 8'h56; #10;
+
+        // Complete the message
+        msg_start = 0;
+        byte_valid = 0;
+
+        wait(eoc == 0);
+
+        // Wait for processing
+        wait(eoc == 1);
+        $display("Output ctxt = {%h, %h, %h, %h, %h, %h, %h, %h}", 
+                 ctxt[0], ctxt[1], ctxt[2], ctxt[3], ctxt[4], ctxt[5], ctxt[6], ctxt[7]);
+
+        #10 // Sample time
+
+        // Message of 4 bytes with msg_start high and byte_valid low between bytes
+        $display("Test Case 4: Sending 4-byte message with msg_start high and byte_valid low between bytes");
+
+        // Send 4 bytes sequentially
+        msg_start = 1;
+        byte_valid = 1;
+        msg_byte = 8'hA1; #10;
+        byte_valid = 0;
+        msg_byte = 8'hB2; #10;
+        byte_valid = 1;
+        #10
+        byte_valid = 0;
+        msg_byte = 8'hC3; #10;
+        byte_valid = 1;
+        #10
+        byte_valid = 0;
+        msg_byte = 8'hD4; #10;
+        byte_valid = 1;
+        #10
+
 
         // Complete the message
         msg_start = 0;
