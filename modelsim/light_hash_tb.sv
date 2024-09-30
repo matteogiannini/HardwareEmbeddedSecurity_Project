@@ -1,18 +1,13 @@
-`timescale 1ns/1ps
-
 module tb_light_hash;
 
-    // Parameters
-    parameter CLK_PERIOD = 10; // Clock period in nanoseconds
-
-    // Signals for the DUT
-    reg clk;
-    reg rst_n;
-    reg [7:0] msg_byte;
-    reg byte_valid;
-    reg msg_start;
-    wire eoc;
-    wire [7:0] ctxt [0:7]; // Output from light_hash
+    // Testbench signals
+    reg          clk;
+    reg          rst_n;
+    reg  [7:0]   msg_byte;        // 1-byte message input
+    reg          byte_valid;      // Byte is valid and stable
+    reg          msg_start;       // Indicates the message is still being provided
+    wire         eoc;             // End of conversion signal (output digest ready)
+    wire [7:0]   ctxt [0:7];      // Processed output as an array of 8 1-byte elements
 
     // Instantiate the light_hash module
     light_hash uut (
@@ -26,75 +21,96 @@ module tb_light_hash;
     );
 
     // Clock generation
-    initial begin
-        clk = 0;
-        forever #(CLK_PERIOD/2) clk = ~clk;
-    end
+    always #5 clk = ~clk;  // Generate a 100 MHz clock
 
-    // Test sequence
+    // Testbench procedure
     initial begin
         // Initialize inputs
+        clk = 0;
         rst_n = 0;
-        msg_byte = 8'd0;
-        byte_valid = 1'b0;
-        msg_start = 1'b0;
+        msg_byte = 8'h00;
+        byte_valid = 0;
+        msg_start = 0;
 
-        // Apply reset
-        #20 rst_n = 1'b1; // Release reset
+        // Reset the design
+        #10;
+        rst_n = 1;
         #10;
 
-        // Test Case 1: Provide one complete block of 8 bytes
-        msg_start = 1'b1; // Start providing message
-        byte_valid = 1'b1;
+        // Test Case 1: Send 8 bytes with msg_start high
+        $display("Test Case 1: Sending 8-byte message");
         
-        // Provide 8 valid bytes
-        msg_byte = 8'h01; #CLK_PERIOD;
-        msg_byte = 8'h02; #CLK_PERIOD;
-        msg_byte = 8'h03; #CLK_PERIOD;
-        msg_byte = 8'h04; #CLK_PERIOD;
-        msg_byte = 8'h05; #CLK_PERIOD;
-        msg_byte = 8'h06; #CLK_PERIOD;
-        msg_byte = 8'h07; #CLK_PERIOD;
-        msg_byte = 8'h08; #CLK_PERIOD;
+        // Send 8 bytes sequentially
+        msg_start = 1; 
+        #10
+        byte_valid = 1;
+        msg_byte = 8'hA1; #10;
+        msg_byte = 8'hB2; #10;
+        msg_byte = 8'hC3; #10;
+        msg_byte = 8'hD4; #10;
+        msg_byte = 8'hE5; #10;
+        msg_byte = 8'hF6; #10;
+        msg_byte = 8'h07; #10;
+        msg_byte = 8'h88; #10;
 
-        // End message
-        msg_start = 1'b0; 
-        #CLK_PERIOD;
+        // Complete the message
+        msg_start = 0;
+        byte_valid = 0;
 
-        // Wait for EOC to go high
-        wait(eoc);
-        #10; // Wait for a moment
+        wait(eoc == 0);
 
-        // Check the output digest
-        $display("Output ctxt after first block:");
-        for (int i = 0; i < 8; i++) begin
-            $display("ctxt[%0d] = %h", i, ctxt[i]);
-        end
+        // Wait for processing
+        wait(eoc == 1);
+        $display("Output ctxt = {%h, %h, %h, %h, %h, %h, %h, %h}", 
+                 ctxt[0], ctxt[1], ctxt[2], ctxt[3], ctxt[4], ctxt[5], ctxt[6], ctxt[7]);
 
-        // Test Case 2: Provide a second incomplete block of 3 bytes
-        msg_start = 1'b1; // Start providing message
-        byte_valid = 1'b1;
+        // Test Case 2: Send a 6-byte message and stop
+        $display("Test Case 2: Sending 6-byte message");
+        
+        // Send 6 bytes sequentially
+        msg_start = 1;
+        #10
+        byte_valid = 1;
+        msg_byte = 8'h11; #10;
+        msg_byte = 8'h22; #10;
+        msg_byte = 8'h33; #10;
+        msg_byte = 8'h44; #10;
+        msg_byte = 8'h55; #10;
+        msg_byte = 8'h66; #10;
 
-        msg_byte = 8'hA1; #CLK_PERIOD;
-        msg_byte = 8'hA2; #CLK_PERIOD;
-        msg_byte = 8'hA3; #CLK_PERIOD;
+        // Complete the message
+        msg_start = 0;
+        byte_valid = 0;
+        
+        wait(eoc == 0);
+        // Wait for processing
+        wait(eoc == 1);
+        $display("Output ctxt = {%h, %h, %h, %h, %h, %h, %h, %h}", 
+                 ctxt[0], ctxt[1], ctxt[2], ctxt[3], ctxt[4], ctxt[5], ctxt[6], ctxt[7]);
 
-        // End message
-        msg_start = 1'b0; 
-        #CLK_PERIOD;
+        // Test Case 3: Send a 3-byte message
+        $display("Test Case 3: Sending 3-byte message");
+        
+        // Send 3 bytes sequentially
+        msg_start = 1; 
+        #10
+        byte_valid = 1;
+        msg_byte = 8'h12; #10;
+        msg_byte = 8'h34; #10;
+        msg_byte = 8'h56; #10;
 
-        // Wait for EOC to go high
-        wait(eoc);
-        #10; // Wait for a moment
+        // Complete the message
+        msg_start = 0;
+        byte_valid = 0;
 
-        // Check the output digest
-        $display("Output ctxt after second block:");
-        for (int i = 0; i < 8; i++) begin
-            $display("ctxt[%0d] = %h", i, ctxt[i]);
-        end
+        wait(eoc == 0);
 
-        // Finish simulation
-        #50;
+        // Wait for processing
+        wait(eoc == 1);
+        $display("Output ctxt = {%h, %h, %h, %h, %h, %h, %h, %h}", 
+                 ctxt[0], ctxt[1], ctxt[2], ctxt[3], ctxt[4], ctxt[5], ctxt[6], ctxt[7]);
+
+        // End the simulation
         $stop;
     end
 

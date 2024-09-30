@@ -41,19 +41,18 @@ module hash_processor (
             state         <= IDLE;
             round_buffer  <= 64'd0;
             round_count   <= 6'd0;
-            eoc_reg       <= 1'b0; // Set EOC to 1 during reset
+            RFD <= 1; // Ready for data
         end else begin
             case (state)
                 IDLE: begin
-                    $display("IDLE: SOC = %b", soc);
-                    eoc_reg <= 1'b0; // Set EOC to 1 when idle
+                    RFD <= (dav_==0)?0:1; // Ready for data
                     round_buffer  <= msg_block; // Initial round input
                     round_count   <= 6'd0;
-                    state         <= (soc==1)? PROCESS : IDLE; // Start processing when SOC is high
+                    state         <= (dav_==0)? PROCESS : IDLE; // Start processing when SOC is high
                 end
                 PROCESS: begin
                     $display("PROCESS: Round %d", round_count);
-                    eoc_reg <= 1'b0; // Clear EOC when processing
+                    RFD <= 0; // Computing results, not ready for new data
                     if (round_count < 6'd36) begin
                         round_buffer <= hash_round_out;  // Update buffer with the output of the current round
                         round_count  <= round_count + 1;
@@ -71,17 +70,11 @@ module hash_processor (
                     ctxt[5] <= fpx_output_arr[5];
                     ctxt[6] <= fpx_output_arr[6];
                     ctxt[7] <= fpx_output_arr[7];
-                    eoc_reg <= 1'b1; // Set EOC to 1 when processing is done
-                    state <= DONE;
-                end
-                DONE: begin
-                    state <= IDLE; // waits for next SOC to start processing again
+                    RFD <= 0;
+                    state <= (dav_==1)? IDLE : FINALIZE; // Wait for next SOC to start processing again
                 end
             endcase
         end
     end
-
-    // Output assignments
-    assign eoc = eoc_reg;
 
 endmodule

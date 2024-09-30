@@ -11,9 +11,9 @@ module light_hash (
     reg [63:0]   msg_block;         // Register to accumulate 64-bit (8-byte) blocks
     reg [2:0]    byte_count;        // Counter for the number of bytes in the current block
     reg [1:0]    state;             // State register
-    reg          processing;        // Indicates if a block is being processed
+    reg          processing_n;        // Indicates if a block is being processed
     reg          eoc_reg;           // EOC signal register
-    wire         hash_eoc;          // EOC signal from hash_processor
+    wire         hash_rfd;          // RFD signal from hash_processor
     wire [7:0]   hash_output [0:7]; // Output from hash_processor
 
     // State encoding (same as hash_processor)
@@ -27,8 +27,8 @@ module light_hash (
         .clk(clk),
         .rst_n(rst_n),
         .msg_block(msg_block),     // Provide the accumulated 64-bit block
-        .soc(processing),          // Start processing the block when it's ready
-        .eoc(hash_eoc),            // Get the end-of-conversion signal
+        .dav_(processing_n),          // Start processing the block when it's ready
+        .rfd(hash_rfd),            // Get the end-of-conversion signal
         .ctxt(hash_output)         // Get the processed output
     );
 
@@ -38,83 +38,60 @@ module light_hash (
             state       <= IDLE;
             msg_block   <= 64'd0;
             byte_count  <= 3'd0;
-            processing  <= 1'b0;
+            processing_n  <= 1'b1;
             eoc_reg     <= 1'b1;
         end else begin
             case (state)
                 IDLE: begin
                     eoc_reg <= 1'b1;        // Set EOC high when idle
-                    if (msg_start && byte_valid) begin
+                    if (msg_start && byte_valid && byte_count<=7) begin
                         // Accumulate bytes into the 64-bit block
+                        $display("IDLE: Received msg_byte = %h, byte_count = %d", msg_byte, byte_count);
                         msg_block   <= {msg_block[55:0], msg_byte};
-                        byte_count  <= byte_count + 1;
-                        $display("IDLE: Received msg_byte = %h, byte_count = %d", msg_byte, byte_count + 1);
-
-                        // Move to PROCESS state when a full block (8 bytes) is ready
-                        if (byte_count == 7) begin
-                            state       <= PROCESS;
-                            processing  <= 1'b1;  // Trigger hash_processor processing
-                            byte_count  <= 0;
-                             $display("IDLE: Full block ready. Transitioning to PROCESS state.");
-                        end
-                    end else if (!msg_start && byte_count > 0) begin
+                        byte_count  <= (byte_count == 7)?byte_count:byte_count + 1;
+                        state      <= IDLE;
+                    end 
+                    else if (byte_count == 7 || (!msg_start && byte_count>0))begin
                         // If msg_start goes low and we have an incomplete block
-                        state       <= PROCESS;
-                        processing  <= 1'b1;
-                        byte_count  <= 0;
-                         $display("IDLE: Incomplete block ready. Transitioning to PROCESS state.");
+                        processing_n  <= 1'b0;
+                        state       <= (hash_rfd==0) ? PROCESS : IDLE; // Wait for hash_processor to start processing data
+                        eoc_reg     <= (hash_rfd==0) ? 1'b0:1'b1; // Clear EOC when processing
+                        $display("IDLE: Block completed or incomplete message provided. Transitioning to PROCESS state.");
+                    end
+                    else begin
+                        msg_block   <= msg_block; 
+                        byte_count  <= byte_count;
+                        state <= IDLE;
                     end
                 end
 
                 PROCESS: begin
-                      $display("PROCESS: Processing block, msg_block = %h", msg_block);
-                    processing  <= 1'b0;
+                    $display("PROCESS: Processing block, msg_block = %h", msg_block);
+                    processing_n  <= 1'b1;
                     eoc_reg <= 1'b0;         // Clear EOC when processing
-                    if (hash_eoc) begin      // Wait for hash_processor to finish processing
+                    if (hash_rfd==1) begin      // Wait for hash_processor to finish processing
                         state       <= FINALIZE;
-                        processing  <= 1'b0;
-                            $display("PROCESS: Hash processing complete. Transitioning to FINALIZE state.");
+                            $display("PROCESS: Hash processing complete. Transitioning to DONE state.");
                             $display("PROCESS: hash_output = {%h, %h, %h, %h, %h, %h, %h, %h}", 
                                      hash_output[0], hash_output[1], hash_output[2], hash_output[3], 
                                      hash_output[4], hash_output[5], hash_output[6], hash_output[7]);
+                        ctxt[0] <= hash_output[0];
+                        ctxt[1] <= hash_output[1];
+                        ctxt[2] <= hash_output[2];
+                        ctxt[3] <= hash_output[3];
+                        ctxt[4] <= hash_output[4];
+                        ctxt[5] <= hash_output[5];
+                        ctxt[6] <= hash_output[6];
+                        ctxt[7] <= hash_output[7];
+                        state   <= DONE;
                     end
                 end
-
-                FINALIZE: begin
-                    // Transfer the hash_processor output to the ctxt array
-                    ctxt[0] <= hash_output[0];
-                    ctxt[1] <= hash_output[1];
-                    ctxt[2] <= hash_output[2];
-                    ctxt[3] <= hash_output[3];
-                    ctxt[4] <= hash_output[4];
-                    ctxt[5] <= hash_output[5];
-                    ctxt[6] <= hash_output[6];
-                    ctxt[7] <= hash_output[7];
-                    state   <= DONE;
-                    $display("FINALIZE: Transfer complete. Transitioning to DONE state.");
-                end
-
                 DONE: begin
                     eoc_reg <= 1'b1;         // Set EOC high to indicate output is ready
-                    if (msg_start && byte_valid) begin
-                        // Start collecting the next block when new data arrives
-                        msg_block   <= {msg_block[55:0], msg_byte};
-                        byte_count  <= byte_count + 1;
-                        eoc_reg     <= 1'b0; // Clear EOC as we're starting a new block
-                        $display("DONE: Starting new block with msg_byte = %h, byte_count = %d", msg_byte, byte_count + 1);
-
-                        // If a full block is ready, move to PROCESS state
-                        if (byte_count == 7) begin
-                            state       <= PROCESS;
-                            processing  <= 1'b1;
-                            byte_count  <= 0;
-                            $display("DONE: Full block ready. Transitioning to PROCESS state.");
-                        end else begin
-                            state <= IDLE;  // Wait for more bytes
-                        end
-                    end else begin
-                        state <= IDLE;      // Stay in DONE if no more data
-                    end
+                    msg_block <= 64'd0;      // Clear the message block
+                    byte_count <= 3'd0;      // Reset the byte count
+                    state <= IDLE;           // Go back to IDLE state
+                    $display("DONE: Transitioning to IDLE state.");
                 end
             endcase
         end

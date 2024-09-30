@@ -12,12 +12,12 @@ Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 
 Top level modules:
 	rho
 
-} {} {}} {C:/Users/mttgi/Documents/HES Project/modelsim/FPX.sv} {1 {vlog -work work -sv -stats=none {C:/Users/mttgi/Documents/HES Project/modelsim/FPX.sv}
+} {} {}} {C:/Users/mttgi/Documents/HES Project/modelsim/hash_top.sv} {1 {vlog -work work -sv -stats=none {C:/Users/mttgi/Documents/HES Project/modelsim/hash_top.sv}
 Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
--- Compiling module FPX
+-- Compiling module hash_processor
 
 Top level modules:
-	FPX
+	hash_processor
 
 } {} {}} {C:/Users/mttgi/Documents/HES Project/modelsim/theta.sv} {1 {vlog -work work -sv -stats=none {C:/Users/mttgi/Documents/HES Project/modelsim/theta.sv}
 Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
@@ -26,6 +26,13 @@ Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 
 Top level modules:
 	theta
 
+} {} {}} {C:/Users/mttgi/Documents/HES Project/modelsim/FPX.sv} {1 {vlog -work work -sv -stats=none {C:/Users/mttgi/Documents/HES Project/modelsim/FPX.sv}
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module FPX
+
+Top level modules:
+	FPX
+
 } {} {}} {C:/Users/mttgi/Documents/HES Project/modelsim/light_hash.sv} {1 {vlog -work work -sv -stats=none {C:/Users/mttgi/Documents/HES Project/modelsim/light_hash.sv}
 Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
 -- Compiling module light_hash
@@ -33,12 +40,12 @@ Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 
 Top level modules:
 	light_hash
 
-} {} {}} {C:/Users/mttgi/Documents/HES Project/modelsim/aux_conv.sv} {1 {vlog -work work -sv -stats=none {C:/Users/mttgi/Documents/HES Project/modelsim/aux_conv.sv}
+} {} {}} {C:/Users/mttgi/Documents/HES Project/modelsim/hash_top_tb.sv} {1 {vlog -work work -sv -stats=none {C:/Users/mttgi/Documents/HES Project/modelsim/hash_top_tb.sv}
 Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
--- Compiling module aux_conv
+-- Compiling module tb_hash_processor
 
 Top level modules:
-	aux_conv
+	tb_hash_processor
 
 } {} {}} {C:/Users/mttgi/Documents/HES Project/modelsim/hash_round.sv} {1 {vlog -work work -sv -stats=none {C:/Users/mttgi/Documents/HES Project/modelsim/hash_round.sv}
 Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
@@ -46,5 +53,12 @@ Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 
 
 Top level modules:
 	hash_round
+
+} {} {}} {C:/Users/mttgi/Documents/HES Project/modelsim/aux_conv.sv} {1 {vlog -work work -sv -stats=none {C:/Users/mttgi/Documents/HES Project/modelsim/aux_conv.sv}
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module aux_conv
+
+Top level modules:
+	aux_conv
 
 } {} {}}
