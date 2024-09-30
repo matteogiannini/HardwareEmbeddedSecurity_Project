@@ -146,6 +146,38 @@ module tb_light_hash;
         $display("Output ctxt = {%h, %h, %h, %h, %h, %h, %h, %h}", 
                  ctxt[0], ctxt[1], ctxt[2], ctxt[3], ctxt[4], ctxt[5], ctxt[6], ctxt[7]);
 
+        #10 // Sample time
+
+        // Send a message of 9 bytes
+        $display("Test Case 5: Sending 9-byte message");
+
+        // Send 9 bytes sequentially
+        msg_start = 1;
+        byte_valid = 1;
+        msg_byte = 8'hA1; #10;
+        msg_byte = 8'hB2; #10;
+        msg_byte = 8'hC3; #10;
+        msg_byte = 8'hD4; #10;
+        msg_byte = 8'hE5; #10;
+        msg_byte = 8'hF6; #10;
+        msg_byte = 8'h07; #10;
+        msg_byte = 8'h88; #10;
+        msg_byte = 8'h99; #10;
+
+        // Complete the message
+        msg_start = 0;
+        byte_valid = 0;
+        
+        wait(eoc == 0);
+
+        // Wait for processing
+        wait(eoc == 1);
+        $display("Output ctxt = {%h, %h, %h, %h, %h, %h, %h, %h}", 
+                 ctxt[0], ctxt[1], ctxt[2], ctxt[3], ctxt[4], ctxt[5], ctxt[6], ctxt[7]);
+
+        #10 // Sample time
+        
+
         // End the simulation
         $stop;
     end
