@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors
+*.swp
+*~
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# ModelSim / simulation
+work/
+transcript
+vsim.wlf
+*.wlf
+modelsim.ini
+
+# Quartus generated artifacts (by extension, to avoid removing sources)
+*.rpt
+*.summary
+*.smsg
+*.jdi
+*.pin
+*.done
+*.qws
+incremental_db/
+output_files/
