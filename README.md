@@ -72,6 +72,6 @@ python3 clean.py
 
 `doc/light_hash_v5_Project_Report.pdf` contains the full design report; `project_specs.pdf`, `project_rules.pdf` and `work_env_guide.pdf` document the assignment and toolchain setup.
 
-## Author
+## Authors
 
-Matteo Giannini
+Matteo Giannini · Francesco Camaccioli
